@@ -180,25 +180,25 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center py-6 px-4">
+    <main className="min-h-screen bg-[#F5F1EA] text-neutral-900 flex flex-col items-center py-6 px-4">
       <div className="w-full max-w-md flex flex-col h-[100dvh] max-h-[100dvh] pb-4">
 
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
-          <button onClick={() => setSidebarOpen(true)} className="w-8 h-8 flex items-center justify-center text-neutral-400">
+          <button onClick={() => setSidebarOpen(true)} className="w-8 h-8 flex items-center justify-center text-neutral-500">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           <h1 className="text-lg font-medium flex items-center gap-2">
-            <span className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-300 text-sm font-medium">D</span>
+            <span className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-700 text-sm font-medium">D</span>
             {greeting()}
           </h1>
-          <button onClick={startNewChat} className="w-8 h-8 flex items-center justify-center text-neutral-400">
+          <button onClick={startNewChat} className="w-8 h-8 flex items-center justify-center text-neutral-500">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
         </div>
 
         {showOnboarding && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-sm bg-neutral-900 border border-neutral-800 rounded-xl p-4 max-h-[85vh] overflow-y-auto">
+            <div className="w-full max-w-sm bg-white border border-neutral-200 rounded-xl p-4 max-h-[85vh] overflow-y-auto">
               <h2 className="text-base font-medium mb-1">Tell Deos about yourself</h2>
               <p className="text-xs text-neutral-500 mb-4">Optional, but helps Deos give grounded advice from day one.</p>
 
@@ -213,7 +213,7 @@ export default function Home() {
               ].map(field => (
                 <input
                   key={field.key}
-                  className="w-full bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-sm outline-none mb-2 placeholder-neutral-600"
+                  className="w-full bg-neutral-100 border border-neutral-300 rounded-md px-3 py-2 text-sm outline-none mb-2 placeholder-neutral-400"
                   placeholder={field.placeholder}
                   value={onboardData[field.key]}
                   onChange={e => setOnboardData(prev => ({ ...prev, [field.key]: e.target.value }))}
@@ -221,8 +221,8 @@ export default function Home() {
               ))}
 
               <div className="flex gap-2 mt-3">
-                <button onClick={skipOnboarding} className="flex-1 text-sm px-3 py-2 rounded-md bg-neutral-800 text-neutral-400">Skip</button>
-                <button onClick={submitOnboarding} className="flex-1 text-sm px-3 py-2 rounded-md bg-indigo-500/20 text-indigo-300">Save</button>
+                <button onClick={skipOnboarding} className="flex-1 text-sm px-3 py-2 rounded-md bg-neutral-100 text-neutral-500">Skip</button>
+                <button onClick={submitOnboarding} className="flex-1 text-sm px-3 py-2 rounded-md bg-indigo-500/20 text-indigo-700">Save</button>
               </div>
             </div>
           </div>
@@ -230,21 +230,21 @@ export default function Home() {
 
         {sidebarOpen && (
           <div className="fixed inset-0 z-50 flex">
-            <div className="w-72 bg-neutral-900 border-r border-neutral-800 h-full overflow-y-auto p-3">
+            <div className="w-72 bg-white border-r border-neutral-200 h-full overflow-y-auto p-3">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium">Conversations</span>
                 <button onClick={() => setSidebarOpen(false)} className="text-neutral-500 text-sm">✕</button>
               </div>
-              <button onClick={startNewChat} className="w-full text-left text-sm px-3 py-2 rounded-lg bg-indigo-500/20 text-indigo-300 mb-3">
+              <button onClick={startNewChat} className="w-full text-left text-sm px-3 py-2 rounded-lg bg-indigo-500/20 text-indigo-700 mb-3">
                 + New chat
               </button>
               <div className="flex flex-col gap-1">
-                {conversations.length === 0 && <p className="text-xs text-neutral-600 px-3">No conversations yet</p>}
+                {conversations.length === 0 && <p className="text-xs text-neutral-400 px-3">No conversations yet</p>}
                 {conversations.map(c => (
                   <button
                     key={c.id}
                     onClick={() => openConversation(c.id)}
-                    className={`text-left text-sm px-3 py-2 rounded-lg truncate ${c.id === conversationId ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-400'}`}
+                    className={`text-left text-sm px-3 py-2 rounded-lg truncate ${c.id === conversationId ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-500'}`}
                   >
                     {c.title}
                   </button>
@@ -259,12 +259,12 @@ export default function Home() {
           <>
             <div className="flex gap-2 overflow-x-auto mb-4 pb-1 flex-shrink-0">
               {facts.length === 0 && (
-                <span className="text-xs px-3 py-1 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-500 whitespace-nowrap">
+                <span className="text-xs px-3 py-1 rounded-md bg-white border border-neutral-200 text-neutral-500 whitespace-nowrap">
                   No facts learned yet
                 </span>
               )}
               {facts.slice(0, 6).map(f => (
-                <span key={f.id} className="text-xs px-3 py-1 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-400 whitespace-nowrap">
+                <span key={f.id} className="text-xs px-3 py-1 rounded-md bg-white border border-neutral-200 text-neutral-500 whitespace-nowrap">
                   {f.content} <span className="opacity-60">{Math.round(f.confidence * 100)}%</span>
                 </span>
               ))}
@@ -274,18 +274,18 @@ export default function Home() {
               {messages.map((m, i) => (
                 <div key={i} className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                   m.role === 'user'
-                    ? 'self-end bg-indigo-500/20 text-indigo-100 rounded-br-sm'
-                    : 'self-start bg-neutral-900 border border-neutral-800 rounded-bl-sm'
+                    ? 'self-end bg-indigo-500/20 text-indigo-900 rounded-br-sm'
+                    : 'self-start bg-white border border-neutral-200 rounded-bl-sm'
                 }`}>
                   {m.role === 'assistant' ? (
                     <>
                       {(m.usedWebSearch || m.factsLearned > 0) && (
                         <div className="flex gap-2 mb-1.5">
                           {m.usedWebSearch && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400">🔍 Searched the web</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500">🔍 Searched the web</span>
                           )}
                           {m.factsLearned > 0 && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400">📝 Noted {m.factsLearned} fact{m.factsLearned > 1 ? 's' : ''}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500">📝 Noted {m.factsLearned} fact{m.factsLearned > 1 ? 's' : ''}</span>
                           )}
                         </div>
                       )}
@@ -299,7 +299,7 @@ export default function Home() {
               {loading && <div className="self-start text-neutral-500 text-sm">Deos is thinking...</div>}
             </div>
 
-            <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-800 rounded-lg p-2 flex-shrink-0">
+            <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-lg p-2 flex-shrink-0">
               <input
                 className="flex-1 min-w-0 bg-transparent outline-none text-base px-2"
                 placeholder="Ask Deos anything"
@@ -319,14 +319,14 @@ export default function Home() {
           <div className="flex flex-col gap-2 flex-1 overflow-y-auto">
             {facts.length === 0 && <p className="text-sm text-neutral-500">Nothing learned yet — start chatting.</p>}
             {facts.map(f => (
-              <div key={f.id} className="bg-neutral-900 border border-neutral-800 rounded-lg p-3 flex items-center justify-between">
+              <div key={f.id} className="bg-white border border-neutral-200 rounded-lg p-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm">{f.content}</p>
                   <p className="text-xs text-neutral-500 mt-0.5">{f.category} · {Math.round(f.confidence * 100)}% confidence</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => pushToAiOnIt(f.content, f.domain)} className="text-indigo-400 text-xs px-2 whitespace-nowrap">→ AI ON IT</button>
-                  <button onClick={() => deleteFact(f.id)} className="text-neutral-600 text-xs px-2">✕</button>
+                  <button onClick={() => pushToAiOnIt(f.content, f.domain)} className="text-indigo-600 text-xs px-2 whitespace-nowrap">→ AI ON IT</button>
+                  <button onClick={() => deleteFact(f.id)} className="text-neutral-400 text-xs px-2">✕</button>
                 </div>
               </div>
             ))}
@@ -335,29 +335,29 @@ export default function Home() {
 
         {tab === 'decisions' && (
           <div className="flex flex-col gap-3 flex-1 overflow-y-auto">
-            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-3">
+            <div className="bg-white border border-neutral-200 rounded-lg p-3">
               <input
-                className="w-full bg-transparent outline-none text-sm mb-2 placeholder-neutral-600"
+                className="w-full bg-transparent outline-none text-sm mb-2 placeholder-neutral-400"
                 placeholder="What are you deciding?"
                 value={newQuestion}
                 onChange={e => setNewQuestion(e.target.value)}
               />
               <input
-                className="w-full bg-transparent outline-none text-sm mb-2 placeholder-neutral-600"
+                className="w-full bg-transparent outline-none text-sm mb-2 placeholder-neutral-400"
                 placeholder="Options, comma separated"
                 value={newOptions}
                 onChange={e => setNewOptions(e.target.value)}
               />
               <button
                 onClick={createDecision}
-                className="text-xs px-3 py-1.5 rounded-md bg-indigo-500/20 text-indigo-300"
+                className="text-xs px-3 py-1.5 rounded-md bg-indigo-500/20 text-indigo-700"
               >Log decision</button>
             </div>
 
             {decisions.length === 0 && <p className="text-sm text-neutral-500">No decisions logged yet.</p>}
 
             {decisions.map(d => (
-              <div key={d.id} className="bg-neutral-900 border border-neutral-800 rounded-lg p-3">
+              <div key={d.id} className="bg-white border border-neutral-200 rounded-lg p-3">
                 <p className="text-sm mb-2">{d.question}</p>
 
                 {!d.chosen && (
@@ -366,7 +366,7 @@ export default function Home() {
                       <button
                         key={i}
                         onClick={() => chooseOption(d.id, opt)}
-                        className="text-xs px-3 py-1.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-300"
+                        className="text-xs px-3 py-1.5 rounded-md bg-neutral-100 border border-neutral-300 text-neutral-300"
                       >{opt}</button>
                     ))}
                   </div>
@@ -374,23 +374,23 @@ export default function Home() {
 
                 {d.chosen && !d.outcome_notes && (
                   <div>
-                    <p className="text-xs text-indigo-400 mb-2">Chose: {d.chosen}</p>
+                    <p className="text-xs text-indigo-600 mb-2">Chose: {d.chosen}</p>
                     <input
-                      className="w-full bg-neutral-800 border border-neutral-700 rounded-md px-2 py-1.5 text-sm outline-none mb-2 placeholder-neutral-600"
+                      className="w-full bg-neutral-100 border border-neutral-300 rounded-md px-2 py-1.5 text-sm outline-none mb-2 placeholder-neutral-400"
                       placeholder="How did it go?"
                       value={outcomeDrafts[d.id] || ''}
                       onChange={e => setOutcomeDrafts(prev => ({ ...prev, [d.id]: e.target.value }))}
                     />
                     <button
                       onClick={() => reportOutcome(d.id)}
-                      className="text-xs px-3 py-1.5 rounded-md bg-indigo-500/20 text-indigo-300"
+                      className="text-xs px-3 py-1.5 rounded-md bg-indigo-500/20 text-indigo-700"
                     >Save outcome</button>
                   </div>
                 )}
 
                 {d.chosen && d.outcome_notes && (
                   <div>
-                    <p className="text-xs text-indigo-400">Chose: {d.chosen}</p>
+                    <p className="text-xs text-indigo-600">Chose: {d.chosen}</p>
                     <p className="text-xs text-neutral-500 mt-1">Outcome: {d.outcome_notes}</p>
                   </div>
                 )}
@@ -399,14 +399,14 @@ export default function Home() {
           </div>
         )}
 
-        <div className="flex justify-around pt-3 mt-3 border-t border-neutral-800 flex-shrink-0" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
-          <button onClick={() => setTab('chat')} className={`flex flex-col items-center gap-1 text-xs ${tab === 'chat' ? 'text-indigo-400' : 'text-neutral-500'}`}>
+        <div className="flex justify-around pt-3 mt-3 border-t border-neutral-200 flex-shrink-0" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
+          <button onClick={() => setTab('chat')} className={`flex flex-col items-center gap-1 text-xs ${tab === 'chat' ? 'text-indigo-600' : 'text-neutral-500'}`}>
             <span>Chat</span>
           </button>
-          <button onClick={() => setTab('self-model')} className={`flex flex-col items-center gap-1 text-xs ${tab === 'self-model' ? 'text-indigo-400' : 'text-neutral-500'}`}>
+          <button onClick={() => setTab('self-model')} className={`flex flex-col items-center gap-1 text-xs ${tab === 'self-model' ? 'text-indigo-600' : 'text-neutral-500'}`}>
             <span>Self-model</span>
           </button>
-          <button onClick={() => setTab('decisions')} className={`flex flex-col items-center gap-1 text-xs ${tab === 'decisions' ? 'text-indigo-400' : 'text-neutral-500'}`}>
+          <button onClick={() => setTab('decisions')} className={`flex flex-col items-center gap-1 text-xs ${tab === 'decisions' ? 'text-indigo-600' : 'text-neutral-500'}`}>
             <span>Decisions</span>
           </button>
         </div>
