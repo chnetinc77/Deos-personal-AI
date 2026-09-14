@@ -180,7 +180,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F5F1EA] text-neutral-900 flex flex-col items-center py-6 px-4">
+    <main className="min-h-screen bg-[#F7F3EC] text-neutral-900 flex flex-col items-center py-6 px-4">
       <div className="w-full max-w-md flex flex-col h-[100dvh] max-h-[100dvh] pb-4">
 
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
@@ -299,7 +299,7 @@ export default function Home() {
               {loading && <div className="self-start text-neutral-500 text-sm">Deos is thinking...</div>}
             </div>
 
-            <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-lg p-2 flex-shrink-0">
+            <div className="flex items-center gap-2 bg-white border border-neutral-300 rounded-full px-4 py-2.5 flex-shrink-0 shadow-sm">
               <input
                 className="flex-1 min-w-0 bg-transparent outline-none text-base px-2"
                 placeholder="Ask Deos anything"
@@ -309,7 +309,7 @@ export default function Home() {
               />
               <button
                 onClick={send}
-                className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center text-sm"
+                className="flex-shrink-0 w-8 h-8 rounded-full bg-black flex items-center justify-center text-sm text-white"
               >↑</button>
             </div>
           </>
