@@ -8,6 +8,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use((req, res, next) => {
+  const provided = req.headers['x-deos-password'];
+  if (!process.env.DEOS_APP_PASSWORD || provided === process.env.DEOS_APP_PASSWORD) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized' });
+});
+
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -25,7 +33,10 @@ const FACT_TOOL = {
             category: { type: 'string', enum: ['goal', 'value', 'pattern', 'constraint', 'preference'] },
             domain: { type: 'string', enum: ['health', 'finance', 'network', 'career', 'general'], description: 'Which life area this fact belongs to' },
             content: { type: 'string' },
-            confidence: { type: 'number' }
+            confidence: { type: 'number' },
+            reasoning: { type: 'string', description: 'WHY this is true about the user - the underlying logic, independent of the specific instance that revealed it. This is what lets the same reasoning apply to a future, different-looking situation.' },
+            is_principle: { type: 'boolean', description: 'True if this is a generalizable heuristic/value about the user that should apply across many different specific situations (e.g. "avoids jurisdictions with weak rule of law"), rather than a one-off fact tied to a single instance (e.g. "based in London").' },
+            linked_decision_id: { type: 'number', description: 'Optional: the id of a decision (from the decisions table) this fact was derived from, if applicable.' }
           },
           required: ['category', 'content', 'confidence']
         }
@@ -110,6 +121,8 @@ app.post('/api/chat', async (req, res) => {
         type: 'text',
         text: `You are Deos, a personal cognitive assistant that has been learning about this specific user over time. Use what you know about them to give grounded, specific responses that reference their actual history, goals, and patterns - not generic advice. Never make the decision for them; surface relevant context and let them decide. When recording facts, classify each one into a domain: health, finance, network (relationships/people), career, or general.
 
+When you record a fact that reflects a general pattern, value, or heuristic about the user (not just a one-off detail), set is_principle to true and fill in reasoning with the underlying logic in your own words, independent of the specific situation that revealed it. For example, if the user rejects a business idea because of weak rule of law in a specific country, don't just record "rejected Country X" - record the underlying principle (e.g. "avoids operating in jurisdictions with weak rule of law or political instability, especially where civil/business debt can carry criminal liability") with is_principle: true and reasoning explaining why, so the same logic can be applied to a different country or situation you haven't discussed yet. Still also record the specific instance fact if useful, but the principle is what matters most for future reasoning by analogy. Before treating a new situation as novel, check whether it resembles an existing principle in what you know about the user, and apply that principle's logic explicitly unless the user indicates something is genuinely different this time.
+
 You have web search available. For any decision involving money, business, investment, relocation, or legal/regulatory exposure, you must proactively research relevant real-world factors even if the user did not ask you to. This includes, at minimum, explicitly checking:
 - Personal liberty and criminal exposure: can civil or business debts result in criminal liability, arrest, travel bans, or imprisonment in that jurisdiction (this is a common and severe risk in many countries and is frequently missed by generic market research)
 - Political and physical safety: active conflict, war, civil unrest, or government travel advisories affecting the country or region
@@ -156,9 +169,9 @@ Do not treat "rule of law" as satisfied by generic business-climate commentary a
         if (toolBlock.input && toolBlock.input.facts) {
           for (const fact of toolBlock.input.facts) {
             const { rows } = await pool.query(
-              `INSERT INTO user_facts (category, content, confidence, source_event_id, domain)
-               VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-              [fact.category, fact.content, fact.confidence, eventId, fact.domain || 'general']
+              `INSERT INTO user_facts (category, content, confidence, source_event_id, domain, reasoning, is_principle, linked_decision_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+              [fact.category, fact.content, fact.confidence, eventId, fact.domain || 'general', fact.reasoning || null, fact.is_principle || false, fact.linked_decision_id || null]
             );
             newFactIds.push(rows[0].id);
           }
@@ -193,7 +206,26 @@ Do not treat "rule of law" as satisfied by generic business-climate commentary a
       await pool.query(`UPDATE events SET extracted_fact_ids = $1 WHERE id = $2`, [newFactIds, eventId]);
     }
 
-    const textBlocks = response.content.filter(b => b.type === 'text');
+    let textBlocks = response.content.filter(b => b.type === 'text');
+
+    // If Claude never produced text (e.g. hit the tool-use loop cap while still
+    // recording facts/searching), force one final text-only reply so the user
+    // never sees a silent "noted" instead of a real answer.
+    if (textBlocks.length === 0) {
+      messages = [
+        ...messages,
+        { role: 'assistant', content: response.content },
+        { role: 'user', content: 'Please give your final answer to my message now, in plain text, based on everything above.' }
+      ];
+      const finalResponse = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages
+      });
+      textBlocks = finalResponse.content.filter(b => b.type === 'text');
+    }
+
     const replyText = textBlocks.length > 0 ? textBlocks.map(b => b.text).join('\n\n') : "Got it - noted.";
 
     let convId = conversationId;

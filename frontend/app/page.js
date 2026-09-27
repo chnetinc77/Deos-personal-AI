@@ -26,10 +26,45 @@ export default function Home() {
   const [onboardData, setOnboardData] = useState({ age: '', nationality: '', gender: '', location: '', height: '', weight: '', occupation: '' });
 
   const API = process.env.NEXT_PUBLIC_API_URL;
+  const [password, setPassword] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [unlocked, setUnlocked] = useState(false);
+  const [unlockError, setUnlockError] = useState('');
+
+  const apiFetch = (url, options = {}) => {
+    return fetch(url, {
+      ...options,
+      headers: { ...(options.headers || {}), 'x-deos-password': password }
+    });
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem('deos-password');
+    if (saved) {
+      setPassword(saved);
+      setUnlocked(true);
+    }
+  }, []);
+
+  const tryUnlock = async () => {
+    setUnlockError('');
+    try {
+      const res = await fetch(`${API}/api/facts`, { headers: { 'x-deos-password': passwordInput } });
+      if (res.status === 401) {
+        setUnlockError('Wrong password');
+        return;
+      }
+      localStorage.setItem('deos-password', passwordInput);
+      setPassword(passwordInput);
+      setUnlocked(true);
+    } catch (err) {
+      setUnlockError('Could not reach Deos backend');
+    }
+  };
 
   const loadFacts = async () => {
     try {
-      const res = await fetch(`${API}/api/facts`);
+      const res = await apiFetch(`${API}/api/facts`);
       const data = await res.json();
       setFacts(data);
       if (data.length === 0 && !localStorage.getItem('onboarding-dismissed')) {
@@ -42,7 +77,7 @@ export default function Home() {
 
   const submitOnboarding = async () => {
     try {
-      await fetch(`${API}/api/onboarding`, {
+      await apiFetch(`${API}/api/onboarding`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(onboardData)
@@ -60,7 +95,7 @@ export default function Home() {
 
   const loadDecisions = async () => {
     try {
-      const res = await fetch(`${API}/api/decisions`);
+      const res = await apiFetch(`${API}/api/decisions`);
       const data = await res.json();
       setDecisions(data);
     } catch (err) {
@@ -72,7 +107,7 @@ export default function Home() {
     if (!newQuestion.trim() || !newOptions.trim()) return;
     const options = newOptions.split(',').map(o => o.trim()).filter(Boolean);
     try {
-      await fetch(`${API}/api/decisions`, {
+      await apiFetch(`${API}/api/decisions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: newQuestion, options })
@@ -85,7 +120,7 @@ export default function Home() {
 
   const chooseOption = async (id, chosen) => {
     try {
-      await fetch(`${API}/api/decisions/${id}`, {
+      await apiFetch(`${API}/api/decisions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chosen })
@@ -98,7 +133,7 @@ export default function Home() {
     const outcome_notes = outcomeDrafts[id];
     if (!outcome_notes || !outcome_notes.trim()) return;
     try {
-      await fetch(`${API}/api/decisions/${id}`, {
+      await apiFetch(`${API}/api/decisions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ outcome_notes })
@@ -109,7 +144,7 @@ export default function Home() {
 
   const loadConversations = async () => {
     try {
-      const res = await fetch(`${API}/api/conversations`);
+      const res = await apiFetch(`${API}/api/conversations`);
       const data = await res.json();
       setConversations(data);
     } catch (err) {
@@ -119,7 +154,7 @@ export default function Home() {
 
   const openConversation = async (id) => {
     try {
-      const res = await fetch(`${API}/api/conversations/${id}/messages`);
+      const res = await apiFetch(`${API}/api/conversations/${id}/messages`);
       const data = await res.json();
       setMessages(data.map(m => ({ role: m.role, text: m.content })));
       setConversationId(id);
@@ -144,7 +179,7 @@ export default function Home() {
     setInput('');
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/chat`, {
+      const res = await apiFetch(`${API}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMsg.text, conversationId })
@@ -162,7 +197,7 @@ export default function Home() {
 
   const pushToAiOnIt = async (title, domain) => {
     try {
-      const res = await fetch(`${API}/api/push-to-ai-on-it`, {
+      const res = await apiFetch(`${API}/api/push-to-ai-on-it`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, domain })
@@ -174,10 +209,33 @@ export default function Home() {
 
   const deleteFact = async (id) => {
     try {
-      await fetch(`${API}/api/facts/${id}`, { method: 'DELETE' });
+      await apiFetch(`${API}/api/facts/${id}`, { method: 'DELETE' });
       loadFacts();
     } catch (err) {}
   };
+
+  if (!unlocked) {
+    return (
+      <main className="min-h-screen bg-[#F7F3EC] text-neutral-900 flex flex-col items-center justify-center px-6">
+        <div className="w-full max-w-xs flex flex-col gap-3">
+          <h1 className="text-lg font-medium mb-2 text-center">Deos</h1>
+          <input
+            type="password"
+            className="w-full bg-white border border-neutral-300 rounded-full px-4 py-2.5 outline-none text-base"
+            placeholder="Enter password"
+            value={passwordInput}
+            onChange={e => setPasswordInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && tryUnlock()}
+          />
+          {unlockError && <p className="text-xs text-red-600 text-center">{unlockError}</p>}
+          <button
+            onClick={tryUnlock}
+            className="w-full bg-black text-white rounded-full px-4 py-2.5 text-sm font-medium"
+          >Unlock</button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#F7F3EC] text-neutral-900 flex flex-col items-center py-6 px-4">
