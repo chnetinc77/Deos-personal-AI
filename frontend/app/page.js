@@ -31,11 +31,17 @@ export default function Home() {
   const [unlocked, setUnlocked] = useState(false);
   const [unlockError, setUnlockError] = useState('');
 
-  const apiFetch = (url, options = {}) => {
-    return fetch(url, {
+  const apiFetch = async (url, options = {}) => {
+    const res = await fetch(url, {
       ...options,
       headers: { ...(options.headers || {}), 'x-deos-password': password }
     });
+    if (res.status === 401) {
+      localStorage.removeItem('deos-password');
+      setPassword('');
+      setUnlocked(false);
+    }
+    return res;
   };
 
   useEffect(() => {
@@ -66,6 +72,7 @@ export default function Home() {
     try {
       const res = await apiFetch(`${API}/api/facts`);
       const data = await res.json();
+      if (!Array.isArray(data)) { setFacts([]); return; }
       setFacts(data);
       if (data.length === 0 && !localStorage.getItem('onboarding-dismissed')) {
         setShowOnboarding(true);
@@ -97,6 +104,7 @@ export default function Home() {
     try {
       const res = await apiFetch(`${API}/api/decisions`);
       const data = await res.json();
+      if (!Array.isArray(data)) { setDecisions([]); return; }
       setDecisions(data);
     } catch (err) {
       setDecisions([]);
@@ -146,6 +154,7 @@ export default function Home() {
     try {
       const res = await apiFetch(`${API}/api/conversations`);
       const data = await res.json();
+      if (!Array.isArray(data)) { setConversations([]); return; }
       setConversations(data);
     } catch (err) {
       setConversations([]);
@@ -170,7 +179,12 @@ export default function Home() {
     setTab('chat');
   };
 
-  useEffect(() => { loadFacts(); loadDecisions(); loadConversations(); }, []);
+  useEffect(() => {
+    if (!unlocked) return;
+    loadFacts();
+    loadDecisions();
+    loadConversations();
+  }, [unlocked]);
 
   const send = async () => {
     if (!input.trim()) return;
