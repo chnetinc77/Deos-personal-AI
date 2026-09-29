@@ -104,6 +104,73 @@ app.get('/api/conversations/:id/messages', async (req, res) => {
   }
 });
 
+const DEBATE_LENSES = [
+  {
+    name: 'risk',
+    prompt: 'You are analyzing the user\'s message from a RISK perspective only: what could go wrong, what downside or exposure is being underweighted or overlooked. Be concise (3-5 sentences). Ground your view in what is known about the user below - do not give generic advice.'
+  },
+  {
+    name: 'values',
+    prompt: 'You are analyzing the user\'s message from a VALUES AND GOALS ALIGNMENT perspective only: does this fit what the user has said matters to them, their stated goals, and their established patterns/principles. Be concise (3-5 sentences). Ground your view in what is known about the user below - do not give generic advice.'
+  },
+  {
+    name: 'contrarian',
+    prompt: 'You are the DEVIL\'S ADVOCATE. Argue the strongest reasonable case against whatever seems like the obvious answer here, to stress-test it. Be concise (3-5 sentences). Ground your view in what is known about the user below - do not give generic advice.'
+  }
+];
+
+async function runLens(lens, message, selfModel, eventContext) {
+  try {
+    const result = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      system: `${lens.prompt}\n\nWhat is known about the user:\n${selfModel}`,
+      messages: [{ role: 'user', content: `Recent context:\n${eventContext}\n\nUser message: ${message}` }]
+    });
+    return result.content.filter(b => b.type === 'text').map(b => b.text).join(' ').trim();
+  } catch (err) {
+    return '(this angle was unavailable)';
+  }
+}
+
+async function runLensCritique(lens, ownAnswer, others, message) {
+  try {
+    const othersText = others.map((o, i) => `Analyst ${i + 1}: ${o.answer}`).join('\n\n');
+    const result = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 200,
+      system: `${lens.prompt}\n\nYou already gave an initial take on this question. Now briefly say whether you agree, disagree, or want to refine your view given what other analysts independently said. Be concise (2-4 sentences).`,
+      messages: [{ role: 'user', content: `Question: ${message}\n\nYour initial take: ${ownAnswer}\n\nOther analysts' independent takes:\n${othersText}` }]
+    });
+    return result.content.filter(b => b.type === 'text').map(b => b.text).join(' ').trim();
+  } catch (err) {
+    return ownAnswer;
+  }
+}
+
+async function runDebate(message, selfModel, eventContext) {
+  try {
+    const round1 = await Promise.all(
+      DEBATE_LENSES.map(async lens => ({ lens: lens.name, answer: await runLens(lens, message, selfModel, eventContext) }))
+    );
+
+    const round2 = await Promise.all(
+      DEBATE_LENSES.map(async (lens, i) => {
+        const own = round1[i].answer;
+        const others = round1.filter((_, j) => j !== i);
+        const critique = await runLensCritique(lens, own, others, message);
+        return { lens: lens.name, critique };
+      })
+    );
+
+    return DEBATE_LENSES.map((lens, i) =>
+      `[${lens.name} - initial]: ${round1[i].answer}\n[${lens.name} - after seeing others]: ${round2[i].critique}`
+    ).join('\n\n');
+  } catch (err) {
+    return '(internal debate unavailable this time)';
+  }
+}
+
 async function classifyMessage(message) {
   try {
     const result = await anthropic.messages.create({
@@ -174,8 +241,10 @@ Do not treat "rule of law" as satisfied by generic business-climate commentary a
       }
     ];
 
+    const debateTranscript = await runDebate(message, selfModel, eventContext);
+
     let messages = [
-      { role: 'user', content: `Recent context:\n${eventContext}\n\nUser message: ${message}` }
+      { role: 'user', content: `Recent context:\n${eventContext}\n\nInternal analysis from multiple angles - this is your own reasoning process, never mention this debate or these labels to the user, just give one clear synthesized answer:\n${debateTranscript}\n\nUser message: ${message}` }
     ];
 
     const toolDefs = [FACT_TOOL, { type: 'web_search_20250305', name: 'web_search' }];
