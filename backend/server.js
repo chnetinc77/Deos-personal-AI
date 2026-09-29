@@ -104,10 +104,50 @@ app.get('/api/conversations/:id/messages', async (req, res) => {
   }
 });
 
+async function classifyMessage(message) {
+  try {
+    const result = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 10,
+      system: 'Classify the user message as exactly one word: "casual" (greetings, small talk, simple factual questions, acknowledgements) or "decision" (anything involving a choice, plan, advice request, business/financial/health/relationship/career matter, or anything that would benefit from knowing the user\'s history and values). Respond with only the single word, nothing else.',
+      messages: [{ role: 'user', content: message }]
+    });
+    const text = result.content.filter(b => b.type === 'text').map(b => b.text).join('').trim().toLowerCase();
+    return text.includes('casual') ? 'casual' : 'decision';
+  } catch (err) {
+    return 'decision'; // fail safe: if classification breaks, use the full pipeline
+  }
+}
+
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, conversationId } = req.body;
     if (!message) return res.status(400).json({ error: 'message is required' });
+
+    const messageClass = await classifyMessage(message);
+
+    if (messageClass === 'casual') {
+      const casualResponse = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: 'You are Deos, a warm personal cognitive assistant. Reply briefly and naturally to this casual message. Do not overthink it.',
+        messages: [{ role: 'user', content: message }]
+      });
+      const casualText = casualResponse.content.filter(b => b.type === 'text').map(b => b.text).join('\n\n') || "Hey!";
+
+      let convId = conversationId;
+      if (!convId) {
+        const title = message.length > 50 ? message.slice(0, 50) + '...' : message;
+        const convResult = await pool.query(`INSERT INTO conversations (title) VALUES ($1) RETURNING id`, [title]);
+        convId = convResult.rows[0].id;
+      }
+      await pool.query(`INSERT INTO messages (conversation_id, role, content) VALUES ($1, 'user', $2)`, [convId, message]);
+      await pool.query(`INSERT INTO messages (conversation_id, role, content) VALUES ($1, 'assistant', $2)`, [convId, casualText]);
+      await pool.query(`UPDATE conversations SET updated_at = now() WHERE id = $1`, [convId]);
+
+      return res.json({ reply: casualText, factsLearned: 0, conversationId: convId, usedWebSearch: false });
+    }
+
 
     const selfModel = await getSelfModel();
     const recentEvents = await getRecentEvents();
