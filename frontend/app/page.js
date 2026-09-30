@@ -30,6 +30,7 @@ export default function Home() {
   const [passwordInput, setPasswordInput] = useState('');
   const [unlocked, setUnlocked] = useState(false);
   const [unlockError, setUnlockError] = useState('');
+  const [expandedDebate, setExpandedDebate] = useState({});
 
   const apiFetch = async (url, options = {}) => {
     const res = await fetch(url, {
@@ -199,7 +200,7 @@ export default function Home() {
         body: JSON.stringify({ message: userMsg.text, conversationId })
       });
       const data = await res.json();
-      setMessages(prev => [...prev, { role: 'assistant', text: data.reply || data.error || 'No reply.', usedWebSearch: data.usedWebSearch, factsLearned: data.factsLearned }]);
+      setMessages(prev => [...prev, { role: 'assistant', text: data.reply || data.error || 'No reply.', usedWebSearch: data.usedWebSearch, factsLearned: data.factsLearned, debate: data.debate }]);
       if (data.conversationId) setConversationId(data.conversationId);
       loadFacts();
       loadConversations();
@@ -364,6 +365,19 @@ export default function Home() {
                       <div className="prose-chat">
                         <ReactMarkdown>{m.text}</ReactMarkdown>
                       </div>
+                      {m.debate && (
+                        <div className="mt-2">
+                          <button
+                            onClick={() => setExpandedDebate(prev => ({ ...prev, [i]: !prev[i] }))}
+                            className="text-[10px] text-neutral-400 underline"
+                          >{expandedDebate[i] ? 'Hide reasoning' : 'Show reasoning'}</button>
+                          {expandedDebate[i] && (
+                            <div className="mt-1.5 p-2 bg-neutral-50 border border-neutral-200 rounded-lg text-[11px] text-neutral-600 whitespace-pre-wrap max-h-64 overflow-y-auto">
+                              {m.debate}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </>
                   ) : m.text}
                 </div>
