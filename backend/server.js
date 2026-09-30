@@ -357,7 +357,7 @@ Do not treat "rule of law" as satisfied by generic business-climate commentary a
     );
     await pool.query(`UPDATE conversations SET updated_at = now() WHERE id = $1`, [convId]);
 
-    res.json({ reply: replyText, factsLearned: newFactIds.length, conversationId: convId, usedWebSearch });
+    res.json({ reply: replyText, factsLearned: newFactIds.length, conversationId: convId, usedWebSearch, debate: debateTranscript });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal error' });
